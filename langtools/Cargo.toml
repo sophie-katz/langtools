@@ -1,0 +1,7 @@
+[package]
+edition = "2021"
+name    = "langtools"
+version = "0.1.0"
+
+[dependencies]
+readonly = "0.2.1"

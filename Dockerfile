@@ -1,0 +1,59 @@
+# MIT License
+#
+# Copyright (c) 2022 Sophie Katz
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+# Start out with the latest Ubuntu LTS version
+FROM ubuntu:20.04
+
+# Make sure we install tzdata first so we do not get a user prompt for what
+# timezone we are in. This causes the docker build to hang otherwise.
+ENV TZ=Etc/UTC
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
+
+# Update, upgrade, and install apt dependencies
+RUN apt-get update -y && \
+    apt-get upgrade -y && \
+    apt-get install -y \
+    curl \
+    gcc \
+    git \
+    lcov \
+    libssl-dev \
+    pkg-config
+
+# Add the `dev` user and switch to it
+RUN useradd -ms /bin/bash dev && \
+    mkdir -p /app && \
+    chown -R dev:dev /app
+
+USER dev
+WORKDIR /app
+
+# Install Cargo
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+# Install global Cargo dependencies
+RUN . ~/.cargo/env && \
+    cargo install \
+    cargo-edit \
+    cargo-workspaces \
+    cargo-tarpaulin
