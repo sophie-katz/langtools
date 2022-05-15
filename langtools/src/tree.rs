@@ -20,36 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use super::source_info::SourceInfo;
-use std::path::PathBuf;
+use core::fmt::Debug;
 
-pub type Offset = usize;
-pub type Line = u32;
-pub type Column = Line;
+use crate::domain::token::Token;
 
-pub const OFFSET_INITIAL: Offset = 0;
-pub const LINE_INITIAL: Line = 1;
-pub const COLUMN_INITIAL: Column = 1;
+pub mod visit;
 
-#[derive(Clone, Debug, PartialEq, PartialOrd, Eq)]
-pub struct SourceLocation {
-    pub info: SourceInfo,
-    pub offset: Offset,
-    pub line: Line,
-    pub column: Column,
-}
-
-impl SourceLocation {
-    pub fn new(path: PathBuf, offset: Offset, line: Line, column: Column) -> Self {
-        Self::new_from_info(SourceInfo::new(path), offset, line, column)
-    }
-
-    pub fn new_from_info(info: SourceInfo, offset: Offset, line: Line, column: Column) -> Self {
-        Self {
-            info,
-            offset,
-            line,
-            column,
-        }
-    }
+pub trait Tree: Debug + Clone + PartialEq + Eq + visit::Visit {
+    fn token(&self) -> &Token<()>;
 }

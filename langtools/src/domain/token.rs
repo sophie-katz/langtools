@@ -21,16 +21,20 @@
 // SOFTWARE.
 
 use super::source_location::{Column, Line, Offset, SourceLocation};
-use std::path::PathBuf;
+use std::{fmt::Debug, hash::Hash, path::PathBuf};
 
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
-pub struct Token<TKind> {
+pub trait TokenKind: Debug + Clone + Copy + Eq + PartialOrd + Hash {}
+
+#[derive(Clone, Debug, PartialEq, PartialOrd, Eq)]
+pub struct Token<TKind: TokenKind> {
     pub location: SourceLocation,
     pub text: String,
     pub kind: TKind,
 }
 
-impl<TKind> Token<TKind> {
+impl TokenKind for () {}
+
+impl<TKind: TokenKind> Token<TKind> {
     pub fn new(
         path: PathBuf,
         offset: Offset,
@@ -59,10 +63,21 @@ impl<TKind> Token<TKind> {
 mod tests {
     use super::*;
 
+    #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Hash)]
+    struct TokenKindTest {}
+
+    impl TokenKind for TokenKindTest {}
+
     #[test]
     fn test_token_to_kindless() {
-        let token_with_kind =
-            Token::<&str>::new(PathBuf::from("--"), 0, 1, 1, String::from("hi"), "bye");
+        let token_with_kind = Token::<TokenKindTest>::new(
+            PathBuf::from("--"),
+            0,
+            1,
+            1,
+            String::from("hi"),
+            TokenKindTest {},
+        );
         let token_without_kind: Token<()> = token_with_kind.to_kindless();
 
         assert_eq!(token_without_kind.location, token_with_kind.location);

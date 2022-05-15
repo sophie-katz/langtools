@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 use crate::{
+    domain::token::TokenKind,
     lexing::lexing_error::LexingError,
     messaging::message_context::MessageContext,
     sourcing::{read_source::ReadSource, source_reader::SourceReader},
@@ -41,7 +42,7 @@ pub struct Lexer<TTokenKind> {
     error_handler: Option<LexerErrorHandler>,
 }
 
-impl<TTokenKind> Lexer<TTokenKind> {
+impl<TTokenKind: TokenKind> Lexer<TTokenKind> {
     pub fn new() -> Self {
         let mut trigger_dfsa = DFSA::new();
         let start_id = trigger_dfsa.add_state();
@@ -104,7 +105,7 @@ impl<TTokenKind> Lexer<TTokenKind> {
     }
 }
 
-impl<TTokenKind> Default for Lexer<TTokenKind> {
+impl<TTokenKind: TokenKind> Default for Lexer<TTokenKind> {
     fn default() -> Self {
         Self::new()
     }
@@ -116,15 +117,27 @@ mod tests {
 
     use super::*;
 
+    #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Hash)]
+    enum TokenKindTest {
+        AB,
+        AC,
+        ABC,
+    }
+
+    impl TokenKind for TokenKindTest {}
+
     #[test]
     fn test_lexer_add_trigger() {
-        let mut lexer = Lexer::<&str>::new();
+        let mut lexer = Lexer::<TokenKindTest>::new();
 
-        assert_eq!(lexer.add_trigger("ab", |_| Some("ab")), Ok(()));
-        assert_eq!(lexer.add_trigger("ac", |_| Some("ac")), Ok(()));
-        assert_eq!(lexer.add_trigger("abc", |_| Some("abc")), Ok(()));
+        assert_eq!(lexer.add_trigger("ab", |_| Some(TokenKindTest::AB)), Ok(()));
+        assert_eq!(lexer.add_trigger("ac", |_| Some(TokenKindTest::AC)), Ok(()));
         assert_eq!(
-            lexer.add_trigger("ab", |_| Some("ab")),
+            lexer.add_trigger("abc", |_| Some(TokenKindTest::ABC)),
+            Ok(())
+        );
+        assert_eq!(
+            lexer.add_trigger("ab", |_| Some(TokenKindTest::AB)),
             Err(LexingError::DuplicateTrigger(String::from("ab")))
         );
     }

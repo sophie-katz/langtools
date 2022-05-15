@@ -24,3 +24,11 @@ pub mod read_source;
 pub mod source_reader;
 pub mod source_string;
 pub mod sourcing_error;
+
+use self::source_string::SourceString;
+use crate::domain::source_info::SourceInfo;
+use std::path::PathBuf;
+
+pub fn source_new_string(data: &str) -> SourceString {
+    SourceString::new(SourceInfo::new(PathBuf::from("--")), data)
+}

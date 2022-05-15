@@ -21,7 +21,7 @@
 // SOFTWARE.
 
 use crate::{
-    domain::token::Token,
+    domain::token::{Token, TokenKind},
     messaging::{
         message::{Message, Severity},
         message_context::MessageContext,
@@ -38,13 +38,13 @@ use super::{
     lexing_error::{LexingError, Result},
 };
 
-pub struct LexerContext<'lexer, TTokenKind> {
+pub struct LexerContext<'lexer, TTokenKind: TokenKind> {
     lexer: &'lexer Lexer<TTokenKind>,
     source_reader: &'lexer mut SourceReader<'lexer>,
     message_context: &'lexer mut MessageContext,
 }
 
-impl<'lexer, TTokenKind> LexerContext<'lexer, TTokenKind> {
+impl<'lexer, TTokenKind: TokenKind> LexerContext<'lexer, TTokenKind> {
     pub fn new(
         lexer: &'lexer Lexer<TTokenKind>,
         source_reader: &'lexer mut SourceReader<'lexer>,
@@ -175,7 +175,7 @@ impl<'lexer, TTokenKind> LexerContext<'lexer, TTokenKind> {
     }
 }
 
-impl<'lexer, TTokenKind> Iterator for LexerContext<'lexer, TTokenKind> {
+impl<'lexer, TTokenKind: TokenKind> Iterator for LexerContext<'lexer, TTokenKind> {
     type Item = Token<TTokenKind>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -230,13 +230,26 @@ mod tests {
 
     use super::*;
 
+    #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Hash)]
+    enum TokenKindTest {
+        A,
+        AB,
+        AC,
+        ABC,
+    }
+
+    impl TokenKind for TokenKindTest {}
+
     #[test]
     fn test_lexer_context_simple() {
-        let mut lexer = Lexer::<&str>::new();
+        let mut lexer = Lexer::<TokenKindTest>::new();
 
-        assert_eq!(lexer.add_trigger("ab", |_| Some("ab")), Ok(()));
-        assert_eq!(lexer.add_trigger("ac", |_| Some("ac")), Ok(()));
-        assert_eq!(lexer.add_trigger("abc", |_| Some("abc")), Ok(()));
+        assert_eq!(lexer.add_trigger("ab", |_| Some(TokenKindTest::AB)), Ok(()));
+        assert_eq!(lexer.add_trigger("ac", |_| Some(TokenKindTest::AC)), Ok(()));
+        assert_eq!(
+            lexer.add_trigger("abc", |_| Some(TokenKindTest::ABC)),
+            Ok(())
+        );
 
         let mut source = SourceString::new(SourceInfo::new(PathBuf::from("--")), "abacabcac");
         let mut source_reader = SourceReader::new(&mut source);
@@ -255,7 +268,7 @@ mod tests {
                 1,
                 1,
                 String::from("ab"),
-                "ab"
+                TokenKindTest::AB
             ))
         );
 
@@ -267,7 +280,7 @@ mod tests {
                 1,
                 3,
                 String::from("ac"),
-                "ac"
+                TokenKindTest::AC
             ))
         );
 
@@ -279,7 +292,7 @@ mod tests {
                 1,
                 5,
                 String::from("abc"),
-                "abc"
+                TokenKindTest::ABC
             ))
         );
 
@@ -291,7 +304,7 @@ mod tests {
                 1,
                 8,
                 String::from("ac"),
-                "ac"
+                TokenKindTest::AC
             ))
         );
 
@@ -303,11 +316,14 @@ mod tests {
 
     #[test]
     fn test_lexer_context_unexpected_char() {
-        let mut lexer = Lexer::<&str>::new();
+        let mut lexer = Lexer::<TokenKindTest>::new();
 
-        assert_eq!(lexer.add_trigger("ab", |_| Some("ab")), Ok(()));
-        assert_eq!(lexer.add_trigger("ac", |_| Some("ac")), Ok(()));
-        assert_eq!(lexer.add_trigger("abc", |_| Some("abc")), Ok(()));
+        assert_eq!(lexer.add_trigger("ab", |_| Some(TokenKindTest::AB)), Ok(()));
+        assert_eq!(lexer.add_trigger("ac", |_| Some(TokenKindTest::AC)), Ok(()));
+        assert_eq!(
+            lexer.add_trigger("abc", |_| Some(TokenKindTest::ABC)),
+            Ok(())
+        );
 
         let mut source = SourceString::new(SourceInfo::new(PathBuf::from("--")), "d");
         let mut source_reader = SourceReader::new(&mut source);
@@ -326,11 +342,14 @@ mod tests {
 
     #[test]
     fn test_lexer_context_unexpected_end() {
-        let mut lexer = Lexer::<&str>::new();
+        let mut lexer = Lexer::<TokenKindTest>::new();
 
-        assert_eq!(lexer.add_trigger("ab", |_| Some("ab")), Ok(()));
-        assert_eq!(lexer.add_trigger("ac", |_| Some("ac")), Ok(()));
-        assert_eq!(lexer.add_trigger("abc", |_| Some("abc")), Ok(()));
+        assert_eq!(lexer.add_trigger("ab", |_| Some(TokenKindTest::AB)), Ok(()));
+        assert_eq!(lexer.add_trigger("ac", |_| Some(TokenKindTest::AC)), Ok(()));
+        assert_eq!(
+            lexer.add_trigger("abc", |_| Some(TokenKindTest::ABC)),
+            Ok(())
+        );
 
         let mut source = SourceString::new(SourceInfo::new(PathBuf::from("--")), "a");
         let mut source_reader = SourceReader::new(&mut source);
@@ -349,7 +368,7 @@ mod tests {
 
     #[test]
     fn test_lexer_context_trigger_action() {
-        let mut lexer = Lexer::<&str>::new();
+        let mut lexer = Lexer::<TokenKindTest>::new();
 
         assert_eq!(
             lexer.add_trigger("ab", |source_reader| {
@@ -357,12 +376,15 @@ mod tests {
                     let _ = source_reader.eat_next();
                 }
 
-                Some("ab")
+                Some(TokenKindTest::AB)
             }),
             Ok(())
         );
-        assert_eq!(lexer.add_trigger("ac", |_| Some("ac")), Ok(()));
-        assert_eq!(lexer.add_trigger("abc", |_| Some("abc")), Ok(()));
+        assert_eq!(lexer.add_trigger("ac", |_| Some(TokenKindTest::AC)), Ok(()));
+        assert_eq!(
+            lexer.add_trigger("abc", |_| Some(TokenKindTest::ABC)),
+            Ok(())
+        );
 
         let mut source = SourceString::new(SourceInfo::new(PathBuf::from("--")), "abbbacabcac");
         let mut source_reader = SourceReader::new(&mut source);
@@ -381,7 +403,7 @@ mod tests {
                 1,
                 1,
                 String::from("abbb"),
-                "ab"
+                TokenKindTest::AB
             ))
         );
 
@@ -393,7 +415,7 @@ mod tests {
                 1,
                 5,
                 String::from("ac"),
-                "ac"
+                TokenKindTest::AC
             ))
         );
 
@@ -405,7 +427,7 @@ mod tests {
                 1,
                 7,
                 String::from("abc"),
-                "abc"
+                TokenKindTest::ABC
             ))
         );
 
@@ -417,7 +439,7 @@ mod tests {
                 1,
                 10,
                 String::from("ac"),
-                "ac"
+                TokenKindTest::AC
             ))
         );
 
@@ -429,9 +451,9 @@ mod tests {
 
     #[test]
     fn test_lexer_context_error_recovery_default() {
-        let mut lexer = Lexer::<&str>::new();
+        let mut lexer = Lexer::<TokenKindTest>::new();
 
-        assert_eq!(lexer.add_trigger("a", |_| Some("a")), Ok(()));
+        assert_eq!(lexer.add_trigger("a", |_| Some(TokenKindTest::A)), Ok(()));
 
         let mut source = SourceString::new(SourceInfo::new(PathBuf::from("--")), "aba");
         let mut source_reader = SourceReader::new(&mut source);
@@ -450,7 +472,7 @@ mod tests {
                 1,
                 1,
                 String::from("a"),
-                "a"
+                TokenKindTest::A
             ))
         );
 
@@ -462,7 +484,7 @@ mod tests {
                 1,
                 3,
                 String::from("a"),
-                "a"
+                TokenKindTest::A
             ))
         );
 
@@ -475,9 +497,9 @@ mod tests {
 
     #[test]
     fn test_lexer_context_error_recovery_simple() {
-        let mut lexer = Lexer::<&str>::new();
+        let mut lexer = Lexer::<TokenKindTest>::new();
 
-        assert_eq!(lexer.add_trigger("a", |_| Some("a")), Ok(()));
+        assert_eq!(lexer.add_trigger("a", |_| Some(TokenKindTest::A)), Ok(()));
 
         lexer.set_error_handler(|source| {
             let _ = source.eat_next();
@@ -501,7 +523,7 @@ mod tests {
                 1,
                 1,
                 String::from("a"),
-                "a"
+                TokenKindTest::A
             ))
         );
 
@@ -513,7 +535,7 @@ mod tests {
                 1,
                 4,
                 String::from("a"),
-                "a"
+                TokenKindTest::A
             ))
         );
 

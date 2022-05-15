@@ -21,6 +21,9 @@
 // SOFTWARE.
 
 pub mod domain;
+pub mod language_declaration;
 pub mod lexing;
 pub mod messaging;
+pub mod parsing;
 pub mod sourcing;
+pub mod tree;

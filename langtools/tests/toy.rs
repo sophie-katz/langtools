@@ -20,36 +20,23 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use super::source_info::SourceInfo;
-use std::path::PathBuf;
+use langtools::{language_declaration::LanguageDeclaration, sourcing::source_new_string};
 
-pub type Offset = usize;
-pub type Line = u32;
-pub type Column = Line;
+fn create_toy_lang() {
+    // let mut toy_lang = LanguageDeclaration::default();
 
-pub const OFFSET_INITIAL: Offset = 0;
-pub const LINE_INITIAL: Line = 1;
-pub const COLUMN_INITIAL: Column = 1;
-
-#[derive(Clone, Debug, PartialEq, PartialOrd, Eq)]
-pub struct SourceLocation {
-    pub info: SourceInfo,
-    pub offset: Offset,
-    pub line: Line,
-    pub column: Column,
+    // toy_lang.lexer.add_trigger("function", |_| Some())
 }
 
-impl SourceLocation {
-    pub fn new(path: PathBuf, offset: Offset, line: Line, column: Column) -> Self {
-        Self::new_from_info(SourceInfo::new(path), offset, line, column)
-    }
+#[test]
+fn test_toy() {
+    let mut source = source_new_string(
+        "
 
-    pub fn new_from_info(info: SourceInfo, offset: Offset, line: Line, column: Column) -> Self {
-        Self {
-            info,
-            offset,
-            line,
-            column,
-        }
+    function main() {
+        print(\"hello, world\\n\");
     }
+    
+    ",
+    );
 }

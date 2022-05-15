@@ -20,36 +20,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use super::source_info::SourceInfo;
-use std::path::PathBuf;
+use std::collections::HashSet;
 
-pub type Offset = usize;
-pub type Line = u32;
-pub type Column = Line;
+use super::parsing_error::ParsingError;
+use crate::{domain::token::TokenKind, lexing::token_reader::TokenReader, tree::Tree};
 
-pub const OFFSET_INITIAL: Offset = 0;
-pub const LINE_INITIAL: Line = 1;
-pub const COLUMN_INITIAL: Column = 1;
+pub trait Parse<TTokenKind: TokenKind, TTree: Tree> {
+    fn parse(
+        &self,
+        token_reader: &mut TokenReader<TTokenKind>,
+    ) -> Result<TTree, ParsingError<TTokenKind>>;
 
-#[derive(Clone, Debug, PartialEq, PartialOrd, Eq)]
-pub struct SourceLocation {
-    pub info: SourceInfo,
-    pub offset: Offset,
-    pub line: Line,
-    pub column: Column,
-}
+    fn expected_tokens_unsafe(&self) -> Result<HashSet<TTokenKind>, ParsingError<TTokenKind>>;
 
-impl SourceLocation {
-    pub fn new(path: PathBuf, offset: Offset, line: Line, column: Column) -> Self {
-        Self::new_from_info(SourceInfo::new(path), offset, line, column)
-    }
+    fn expected_tokens(&self) -> Result<HashSet<TTokenKind>, ParsingError<TTokenKind>> {
+        let result = self.expected_tokens_unsafe()?;
 
-    pub fn new_from_info(info: SourceInfo, offset: Offset, line: Line, column: Column) -> Self {
-        Self {
-            info,
-            offset,
-            line,
-            column,
+        if result.is_empty() {
+            Err(ParsingError::NoExpectedTokensProvided)
+        } else {
+            Ok(result)
         }
     }
 }

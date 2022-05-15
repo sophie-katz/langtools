@@ -22,7 +22,7 @@
 
 use std::path::PathBuf;
 
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, PartialEq, PartialOrd, Eq)]
 pub struct SourceInfo {
     pub path: PathBuf,
 }
