@@ -20,4 +20,32 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-pub type DFSAId = usize;
+use super::fsa_types::FSAId;
+use std::error::Error;
+use std::fmt::{self, Display, Formatter};
+use std::result;
+
+pub type Result<TValue> = result::Result<TValue, FSAError>;
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub enum FSAError {
+    NoStartId,
+    OutOfRangeId(FSAId),
+    StateHasNoAction(FSAId),
+    TransitionAlreadyExists,
+    NoSuchTransition,
+}
+
+impl Error for FSAError {}
+
+impl Display for FSAError {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            FSAError::NoStartId => write!(f, "no start id specified"),
+            FSAError::OutOfRangeId(id) => write!(f, "out of range id: {}", id),
+            FSAError::StateHasNoAction(id) => write!(f, "state {} has no action", id),
+            FSAError::TransitionAlreadyExists => write!(f, "transition already exists"),
+            FSAError::NoSuchTransition => write!(f, "no such transition exists on element"),
+        }
+    }
+}

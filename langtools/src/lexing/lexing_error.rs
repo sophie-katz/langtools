@@ -26,13 +26,13 @@ use std::result;
 
 use crate::sourcing::sourcing_error::SourcingError;
 
-use super::dfsa_error::DFSAError;
+use super::fsa_error::FSAError;
 
 pub type Result<T> = result::Result<T, LexingError>;
 
 #[derive(Debug, PartialEq, PartialOrd)]
 pub enum LexingError {
-    DFSAError(DFSAError),
+    FSAError(FSAError),
     SourcingError(SourcingError),
     UnexpectedCharacter(char),
     UnexpectedEndOfSource,
@@ -44,7 +44,7 @@ impl Error for LexingError {}
 impl Display for LexingError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            LexingError::DFSAError(err) => write!(f, "dfsa error: {err}"),
+            LexingError::FSAError(err) => write!(f, "dfsa error: {err}"),
             LexingError::SourcingError(err) => write!(f, "sourcing error: {err}"),
             LexingError::UnexpectedCharacter(value) => {
                 write!(f, "unexpected character: {:#?}", value)
@@ -55,9 +55,9 @@ impl Display for LexingError {
     }
 }
 
-impl From<DFSAError> for LexingError {
-    fn from(other: DFSAError) -> Self {
-        Self::DFSAError(other)
+impl From<FSAError> for LexingError {
+    fn from(other: FSAError) -> Self {
+        Self::FSAError(other)
     }
 }
 

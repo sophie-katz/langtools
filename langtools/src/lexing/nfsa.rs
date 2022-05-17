@@ -22,40 +22,43 @@
 
 use super::fsa_error::{FSAError, Result};
 use super::fsa_types::FSAId;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use std::option::Option;
 use std::vec::Vec;
 
 #[derive(Debug)]
-struct DFSAState<TElement: Eq + Hash, TAction> {
+struct NFSAState<TElement: Eq + Hash, TAction> {
     action: Option<TAction>,
-    transitions: HashMap<TElement, FSAId>,
+    transitions_value: HashMap<TElement, FSAId>,
+    transitions_epsilon: HashSet<FSAId>,
 }
 
 #[derive(Debug)]
-pub struct DFSA<TElement: Eq + Hash, TAction> {
-    states: Vec<DFSAState<TElement, TAction>>,
+pub struct NFSA<TElement: Eq + Hash, TAction> {
+    states: Vec<NFSAState<TElement, TAction>>,
     start_id: Option<FSAId>,
 }
 
-impl<TElement: Eq + Hash, TAction> DFSAState<TElement, TAction> {
+impl<TElement: Eq + Hash, TAction> NFSAState<TElement, TAction> {
     pub fn new() -> Self {
         Self {
             action: None,
-            transitions: HashMap::new(),
+            transitions_value: HashMap::new(),
+            transitions_epsilon: HashSet::new(),
         }
     }
 
     pub fn new_with_action(action: TAction) -> Self {
         Self {
             action: Some(action),
-            transitions: HashMap::new(),
+            transitions_value: HashMap::new(),
+            transitions_epsilon: HashSet::new(),
         }
     }
 }
 
-impl<TElement: Eq + Hash, TAction> DFSA<TElement, TAction> {
+impl<TElement: Eq + Hash, TAction> NFSA<TElement, TAction> {
     pub fn new() -> Self {
         Self {
             states: Vec::new(),
@@ -66,23 +69,38 @@ impl<TElement: Eq + Hash, TAction> DFSA<TElement, TAction> {
     #[must_use]
     pub fn add_state(&mut self) -> FSAId {
         let id = self.states.len();
-        self.states.push(DFSAState::new());
+        self.states.push(NFSAState::new());
         id
     }
 
     #[must_use]
     pub fn add_state_with_action(&mut self, action: TAction) -> FSAId {
         let id = self.states.len();
-        self.states.push(DFSAState::new_with_action(action));
+        self.states.push(NFSAState::new_with_action(action));
         id
     }
 
-    pub fn add_transition(
+    pub fn add_transition_value(
         &mut self,
         from_id: FSAId,
         on_element: TElement,
         to_id: FSAId,
     ) -> Result<()> {
+        if !self.is_id_in_bounds(to_id) {
+            return Err(FSAError::OutOfRangeId(to_id));
+        }
+
+        match self
+            .try_get_state_mut(from_id)?
+            .transitions
+            .insert(on_element, to_id)
+        {
+            Some(_) => Err(FSAError::TransitionAlreadyExists),
+            None => Ok(()),
+        }
+    }
+
+    pub fn add_transition_epsilon(&mut self, from_id: FSAId, to_id: FSAId) -> Result<()> {
         if !self.is_id_in_bounds(to_id) {
             return Err(FSAError::OutOfRangeId(to_id));
         }

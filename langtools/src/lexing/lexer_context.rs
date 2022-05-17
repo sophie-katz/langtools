@@ -206,11 +206,11 @@ impl<'lexer, TTokenKind: TokenKind> Iterator for LexerContext<'lexer, TTokenKind
 
                 None
             }
-            Err(LexingError::DFSAError(err)) => {
+            Err(LexingError::FSAError(err)) => {
                 self.message_context.emit(Message::new_location(
                     location_first,
                     Severity::InternalError,
-                    format!("DFSA error: {err}"),
+                    format!("FSA error: {err}"),
                 ));
 
                 None

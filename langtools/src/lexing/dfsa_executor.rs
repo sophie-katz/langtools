@@ -21,15 +21,15 @@
 // SOFTWARE.
 
 use super::dfsa::DFSA;
-use super::dfsa_error::Result;
-use super::dfsa_types::DFSAId;
+use super::fsa_error::Result;
+use super::fsa_types::FSAId;
 use std::hash::Hash;
 
 #[derive(Debug)]
 pub struct DFSAExecutor<'dfsa, TElement: Eq + Hash, TAction> {
     dfsa: &'dfsa DFSA<TElement, TAction>,
-    start_id: DFSAId,
-    current_id: DFSAId,
+    start_id: FSAId,
+    current_id: FSAId,
 }
 
 impl<'dfsa, TElement: Eq + Hash, TAction> DFSAExecutor<'dfsa, TElement, TAction> {
@@ -68,7 +68,7 @@ impl<'dfsa, TElement: Eq + Hash, TAction> DFSAExecutor<'dfsa, TElement, TAction>
 
 #[cfg(test)]
 mod tests {
-    use super::super::dfsa_error::DFSAError;
+    use super::super::fsa_error::FSAError;
     use super::*;
 
     #[test]
@@ -92,7 +92,7 @@ mod tests {
             dfsa_executor.current_action().cloned(),
             Some(String::from("ab"))
         );
-        assert_eq!(dfsa_executor.step('a'), Err(DFSAError::NoSuchTransition));
+        assert_eq!(dfsa_executor.step('a'), Err(FSAError::NoSuchTransition));
 
         dfsa_executor.reset();
 
@@ -101,7 +101,7 @@ mod tests {
             dfsa_executor.current_action().cloned(),
             Some(String::from("b"))
         );
-        assert_eq!(dfsa_executor.step('a'), Err(DFSAError::NoSuchTransition));
+        assert_eq!(dfsa_executor.step('a'), Err(FSAError::NoSuchTransition));
 
         Ok(())
     }
@@ -112,7 +112,7 @@ mod tests {
 
         assert_eq!(
             DFSAExecutor::new(&dfsa).map(|_| ()),
-            Err(DFSAError::NoStartId)
+            Err(FSAError::NoStartId)
         );
     }
 }
